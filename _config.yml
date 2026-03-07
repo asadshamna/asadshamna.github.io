@@ -27,15 +27,5 @@ plugins:
   - jekyll-sitemap
 
 # Custom variables
-owner: "Asad Shamna"
+owner: "AsadShamna"
 year: "2026"
-
-nav:
-  - name: Home
-    link: /
-  - name: Tutorials
-    link: /tutorials/
-  - name: Writeups
-    link: /writeups/
-  - name: About
-    link: /about/
