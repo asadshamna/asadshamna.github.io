@@ -1,9 +1,9 @@
-title: Hacker-Blog
-description: "A Jekyll Blog Theme For Hackers"
+title: Asad Shamna Blogs
+description: "A one-stop cybersecurity tips and tricks"
 author:
-  name: "SomeHacker"
-  email: "someone@somewebsite.somedomain"
-  url: "https://ashishchaudhary.in/hacker-blog"
+  name: "Asad Shamna"
+  email: "business.asad.shamna@gmail.com"
+  url: "https://asadshamna.github.io"
 
 baseurl: /
 
@@ -14,8 +14,7 @@ paginate: 3
 paginate_path: /page/:num/
 
 defaults:
-  -
-    scope:
+  - scope:
       path: ""
       type: "posts"
     values:
@@ -28,5 +27,5 @@ plugins:
   - jekyll-sitemap
 
 # Custom variables
-owner : "SomeHacker"
-year : "2020"
+owner: "AsadShamna"
+year: "2026"
