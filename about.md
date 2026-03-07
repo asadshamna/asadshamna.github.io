@@ -37,6 +37,6 @@ Everything shared here is intended for **educational purposes and ethical securi
 
 ## Connect With Me
 
-GitHub: https://github.com/asadshamna  
-Linkedin: https://www.linkedin.com/in/asadshamna/
-Email: business.asad.shamna@gmail.com
+[GitHub](https://github.com/asadshamna)  
+[Linkedin](https://www.linkedin.com/in/asadshamna/)
+[Email](business.asad.shamna@gmail.com)
