@@ -1,6 +1,7 @@
 ---
 layout: page
 title: About
+permalink: /about/
 ---
 
 # About Me
@@ -39,4 +40,3 @@ Everything shared here is intended for **educational purposes and ethical securi
 
 [GitHub](https://github.com/asadshamna)  
 [Linkedin](https://www.linkedin.com/in/asadshamna/)
-[Email](business.asad.shamna@gmail.com)

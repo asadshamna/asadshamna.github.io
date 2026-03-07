@@ -1,5 +1,5 @@
 title: Asad Shamna Blogs
-description: "A one-stop cybersecurity tips and tricks"
+description: "A one-stop hacking tips and tricks"
 author:
   name: "Asad Shamna"
   email: "business.asad.shamna@gmail.com"
@@ -10,7 +10,7 @@ baseurl: /
 source: .
 destination: ./_site
 permalink: /:title
-paginate: 3
+paginate: 8
 paginate_path: /page/:num/
 
 defaults:
@@ -27,5 +27,15 @@ plugins:
   - jekyll-sitemap
 
 # Custom variables
-owner: "AsadShamna"
+owner: "Asad Shamna"
 year: "2026"
+
+nav:
+  - name: Home
+    link: /
+  - name: Tutorials
+    link: /tutorials/
+  - name: Writeups
+    link: /writeups/
+  - name: About
+    link: /about/
