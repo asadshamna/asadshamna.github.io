@@ -10,7 +10,7 @@ In this walkthrough, I will be performing a full penetration test on the TryHack
 
 This machine was very interesting because it demonstrated how dangerous misconfigured web applications and exposed installation directories can be. Throughout this walkthrough, I will explain every step I performed during the exploitation process, along with some additional insights and explanations which can help beginners understand the methodology behind the attack chain.
 
-[Access The TryHackMe Blueprint Machine.](https://asadshamna.github.io/Blueprint-Walkthrough).
+[Access The TryHackMe Blueprint Machine](https://tryhackme.com/room/blueprint).
 
 ### [](#header-3)Host Discovery
 
