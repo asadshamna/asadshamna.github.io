@@ -260,8 +260,9 @@ msf > search oscommerce
 0. exploit/unix/webapp/oscommerce_filemanager
 1. exploit/multi/http/oscommerce_installer_unauth_code_exec
 ```
+```
 I'll use **exploit/multi/http/oscommerce_installer_unauth_code_exec**, This module specifically targets the vulnerable installer directory and injects malicious PHP code to obtain a reverse shell.
-
+```
 #### [](#header-4)Configuring the Exploit Module
 I configured the exploit with the target details.
 
